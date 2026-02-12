@@ -8,9 +8,9 @@
     "postinstall": "prisma generate",
     "start": "next start",
     "lint": "eslint",
-    "db:migrate": "prisma migrate dev",
-    "db:push": "prisma db push",
-    "db:studio": "prisma studio"
+    "db:migrate": "dotenv -e .env.local -- prisma migrate dev",
+    "db:push": "dotenv -e .env.local -- prisma db push",
+    "db:studio": "dotenv -e .env.local -- prisma studio"
   },
   "dependencies": {
     "@mux/mux-node": "^12.8.1",
@@ -37,6 +37,7 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "dotenv-cli": "^11.0.0",
     "eslint": "^9",
     "eslint-config-next": "16.1.6",
     "prisma": "^6.19.2",

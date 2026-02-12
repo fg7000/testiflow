@@ -1,0 +1,84 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  name      String?
+  avatarUrl String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  collections Collection[]
+}
+
+model Collection {
+  id              String   @id @default(uuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Display
+  name            String
+  slug            String   @unique
+  welcomeMessage  String?
+  promptQuestions  String[]
+
+  // Branding
+  logoUrl    String?
+  brandColor String @default("#6366f1")
+
+  // Settings
+  maxDuration Int     @default(120)
+  isActive    Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  videos Video[]
+
+  @@index([userId])
+  @@index([slug])
+}
+
+model Video {
+  id           String     @id @default(uuid())
+  collectionId String
+  collection   Collection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+
+  // Client info
+  clientName    String
+  clientEmail   String?
+  clientCompany String?
+
+  // Mux
+  muxAssetId    String?
+  muxPlaybackId String?
+  muxUploadId   String?
+  status        VideoStatus @default(PENDING)
+  duration      Float?
+  thumbnailUrl  String?
+
+  // Moderation
+  approved Boolean @default(false)
+  featured Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([collectionId])
+  @@index([status])
+}
+
+enum VideoStatus {
+  PENDING
+  UPLOADING
+  PROCESSING
+  READY
+  ERRORED
+}

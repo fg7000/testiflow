@@ -1,5 +1,3 @@
-import { prisma } from "@/lib/prisma";
-
 export async function POST(req: Request) {
   const body = await req.text();
 
@@ -15,6 +13,7 @@ export async function POST(req: Request) {
   }
 
   const event = JSON.parse(body);
+  const { prisma } = await import("@/lib/prisma");
 
   switch (event.type) {
     case "video.upload.asset_created": {

@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
 
 export async function GET(
   _req: Request,
@@ -7,6 +6,7 @@ export async function GET(
 ) {
   const { slug } = await params;
 
+  const { prisma } = await import("@/lib/prisma");
   const collection = await prisma.collection.findUnique({
     where: { slug },
     select: {

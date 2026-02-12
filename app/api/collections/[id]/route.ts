@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { prisma } from "@/lib/prisma";
 
 export async function GET(
   _req: Request,
@@ -16,6 +15,7 @@ export async function GET(
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  const { prisma } = await import("@/lib/prisma");
   const collection = await prisma.collection.findFirst({
     where: { id, userId: user.id },
     include: {
@@ -47,6 +47,8 @@ export async function PATCH(
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+
+  const { prisma } = await import("@/lib/prisma");
 
   // Verify ownership
   const existing = await prisma.collection.findFirst({
@@ -92,7 +94,9 @@ export async function DELETE(
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const existing = await prisma.collection.findFirst({
+  const { prisma: prismaClient } = await import("@/lib/prisma");
+
+  const existing = await prismaClient.collection.findFirst({
     where: { id, userId: user.id },
   });
 
@@ -103,7 +107,7 @@ export async function DELETE(
     );
   }
 
-  await prisma.collection.delete({ where: { id } });
+  await prismaClient.collection.delete({ where: { id } });
 
   return NextResponse.json({ success: true });
 }

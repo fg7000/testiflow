@@ -12,28 +12,36 @@ export async function GET(request: Request) {
     const { error } = await supabase.auth.exchangeCodeForSession(code);
 
     if (!error) {
-      // Sync user to our database
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+      // Sync user to our database (non-blocking — don't break login if DB fails)
+      try {
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
 
-      if (user) {
-        await prisma.user.upsert({
-          where: { id: user.id },
-          update: {
-            email: user.email!,
-            name:
-              user.user_metadata?.full_name ?? user.user_metadata?.name ?? null,
-            avatarUrl: user.user_metadata?.avatar_url ?? null,
-          },
-          create: {
-            id: user.id,
-            email: user.email!,
-            name:
-              user.user_metadata?.full_name ?? user.user_metadata?.name ?? null,
-            avatarUrl: user.user_metadata?.avatar_url ?? null,
-          },
-        });
+        if (user) {
+          await prisma.user.upsert({
+            where: { id: user.id },
+            update: {
+              email: user.email!,
+              name:
+                user.user_metadata?.full_name ??
+                user.user_metadata?.name ??
+                null,
+              avatarUrl: user.user_metadata?.avatar_url ?? null,
+            },
+            create: {
+              id: user.id,
+              email: user.email!,
+              name:
+                user.user_metadata?.full_name ??
+                user.user_metadata?.name ??
+                null,
+              avatarUrl: user.user_metadata?.avatar_url ?? null,
+            },
+          });
+        }
+      } catch (e) {
+        console.error("Failed to sync user to database:", e);
       }
 
       const forwardedHost = request.headers.get("x-forwarded-host");

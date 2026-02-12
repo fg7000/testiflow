@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { prisma } from "@/lib/prisma";
 import { Resend } from "resend";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
@@ -25,6 +24,7 @@ export async function POST(req: Request) {
     );
   }
 
+  const { prisma } = await import("@/lib/prisma");
   const collection = await prisma.collection.findFirst({
     where: { id: collectionId, userId: user.id },
   });

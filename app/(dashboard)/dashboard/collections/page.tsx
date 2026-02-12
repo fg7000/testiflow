@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { prisma } from "@/lib/prisma";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -18,13 +17,21 @@ export default async function CollectionsPage() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const collections = await prisma.collection.findMany({
-    where: { userId: user!.id },
-    include: {
-      _count: { select: { videos: true } },
-    },
-    orderBy: { createdAt: "desc" },
-  });
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let collections: any[] = [];
+
+  try {
+    const { prisma } = await import("@/lib/prisma");
+    collections = await prisma.collection.findMany({
+      where: { userId: user!.id },
+      include: {
+        _count: { select: { videos: true } },
+      },
+      orderBy: { createdAt: "desc" },
+    });
+  } catch (e) {
+    console.error("Failed to load collections:", e);
+  }
 
   return (
     <div className="space-y-6">

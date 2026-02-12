@@ -1,7 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { prisma } from "@/lib/prisma";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -24,15 +23,21 @@ export default async function EmbedPage({
     data: { user },
   } = await supabase.auth.getUser();
 
-  const collection = await prisma.collection.findFirst({
-    where: { id, userId: user!.id },
-    include: {
-      videos: {
-        where: { approved: true, status: "READY" },
-        orderBy: { createdAt: "desc" },
+  let collection;
+  try {
+    const { prisma } = await import("@/lib/prisma");
+    collection = await prisma.collection.findFirst({
+      where: { id, userId: user!.id },
+      include: {
+        videos: {
+          where: { approved: true, status: "READY" },
+          orderBy: { createdAt: "desc" },
+        },
       },
-    },
-  });
+    });
+  } catch (e) {
+    console.error("Failed to load collection:", e);
+  }
 
   if (!collection) {
     notFound();

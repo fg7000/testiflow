@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { prisma } from "@/lib/prisma";
 import Mux from "@mux/mux-node";
 
 const mux = new Mux({
@@ -21,6 +20,8 @@ export async function PATCH(
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+
+  const { prisma } = await import("@/lib/prisma");
 
   // Verify ownership through collection
   const existing = await prisma.video.findFirst({
@@ -59,7 +60,9 @@ export async function DELETE(
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const existing = await prisma.video.findFirst({
+  const { prisma: prismaClient } = await import("@/lib/prisma");
+
+  const existing = await prismaClient.video.findFirst({
     where: { id, collection: { userId: user.id } },
   });
 
@@ -76,7 +79,7 @@ export async function DELETE(
     }
   }
 
-  await prisma.video.delete({ where: { id } });
+  await prismaClient.video.delete({ where: { id } });
 
   return NextResponse.json({ success: true });
 }

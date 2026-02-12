@@ -1,5 +1,4 @@
 import { createClient } from "@/lib/supabase/server";
-import { prisma } from "@/lib/prisma";
 import {
   Card,
   CardContent,
@@ -15,15 +14,24 @@ export default async function DashboardPage() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const [collectionCount, videoCount, approvedCount] = await Promise.all([
-    prisma.collection.count({ where: { userId: user!.id } }),
-    prisma.video.count({
-      where: { collection: { userId: user!.id } },
-    }),
-    prisma.video.count({
-      where: { collection: { userId: user!.id }, approved: true },
-    }),
-  ]);
+  let collectionCount = 0;
+  let videoCount = 0;
+  let approvedCount = 0;
+
+  try {
+    const { prisma } = await import("@/lib/prisma");
+    [collectionCount, videoCount, approvedCount] = await Promise.all([
+      prisma.collection.count({ where: { userId: user!.id } }),
+      prisma.video.count({
+        where: { collection: { userId: user!.id } },
+      }),
+      prisma.video.count({
+        where: { collection: { userId: user!.id }, approved: true },
+      }),
+    ]);
+  } catch (e) {
+    console.error("Failed to load dashboard stats:", e);
+  }
 
   const stats = [
     {

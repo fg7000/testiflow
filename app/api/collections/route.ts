@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { prisma } from "@/lib/prisma";
 import { nanoid } from "nanoid";
 
 export async function GET() {
@@ -13,6 +12,7 @@ export async function GET() {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  const { prisma } = await import("@/lib/prisma");
   const collections = await prisma.collection.findMany({
     where: { userId: user.id },
     include: { _count: { select: { videos: true } } },
@@ -42,6 +42,8 @@ export async function POST(req: Request) {
       { status: 400 }
     );
   }
+
+  const { prisma } = await import("@/lib/prisma");
 
   // Generate unique slug
   let slug = nanoid(10);

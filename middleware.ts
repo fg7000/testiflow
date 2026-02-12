@@ -1,6 +1,10 @@
-// Middleware disabled temporarily - authentication will be handled in server components
-// This file is kept empty to avoid Edge Runtime compatibility issues
+import type { NextRequest } from "next/server";
+import { NextResponse } from "next/server";
+
+export function middleware(request: NextRequest) {
+          return NextResponse.next();
+}
 
 export const config = {
-        matcher: [],
+          matcher: [],
 };

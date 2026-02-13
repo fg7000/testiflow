@@ -54,6 +54,22 @@ export async function POST(req: Request) {
 
     const { prisma } = await import("@/lib/prisma");
 
+    // Ensure user record exists (may not if auth callback failed previously)
+    await prisma.user.upsert({
+      where: { id: user.id },
+      update: {
+        email: user.email!,
+        name: user.user_metadata?.full_name ?? user.user_metadata?.name ?? null,
+        avatarUrl: user.user_metadata?.avatar_url ?? null,
+      },
+      create: {
+        id: user.id,
+        email: user.email!,
+        name: user.user_metadata?.full_name ?? user.user_metadata?.name ?? null,
+        avatarUrl: user.user_metadata?.avatar_url ?? null,
+      },
+    });
+
     // Generate unique slug
     let slug = nanoid(10);
     let existing = await prisma.collection.findUnique({ where: { slug } });
@@ -77,8 +93,9 @@ export async function POST(req: Request) {
     return NextResponse.json(collection, { status: 201 });
   } catch (e) {
     console.error("Failed to create collection:", e);
+    const message = e instanceof Error ? e.message : "Unknown error";
     return NextResponse.json(
-      { error: "Failed to create collection. Please try again." },
+      { error: `Failed to create collection: ${message}` },
       { status: 500 }
     );
   }

@@ -11,75 +11,91 @@ export async function PATCH(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const { id } = await params;
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  try {
+    const { id } = await params;
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
-  if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const { prisma } = await import("@/lib/prisma");
+
+    // Verify ownership through collection
+    const existing = await prisma.video.findFirst({
+      where: { id, collection: { userId: user.id } },
+    });
+
+    if (!existing) {
+      return NextResponse.json({ error: "Video not found" }, { status: 404 });
+    }
+
+    const body = await req.json();
+    const { approved, featured } = body;
+
+    const video = await prisma.video.update({
+      where: { id },
+      data: {
+        ...(approved !== undefined && { approved }),
+        ...(featured !== undefined && { featured }),
+      },
+    });
+
+    return NextResponse.json(video);
+  } catch (e) {
+    console.error("Failed to update video:", e);
+    return NextResponse.json(
+      { error: "Failed to update video" },
+      { status: 500 }
+    );
   }
-
-  const { prisma } = await import("@/lib/prisma");
-
-  // Verify ownership through collection
-  const existing = await prisma.video.findFirst({
-    where: { id, collection: { userId: user.id } },
-  });
-
-  if (!existing) {
-    return NextResponse.json({ error: "Video not found" }, { status: 404 });
-  }
-
-  const body = await req.json();
-  const { approved, featured } = body;
-
-  const video = await prisma.video.update({
-    where: { id },
-    data: {
-      ...(approved !== undefined && { approved }),
-      ...(featured !== undefined && { featured }),
-    },
-  });
-
-  return NextResponse.json(video);
 }
 
 export async function DELETE(
   _req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const { id } = await params;
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  try {
+    const { id } = await params;
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
-  if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
-  const { prisma: prismaClient } = await import("@/lib/prisma");
-
-  const existing = await prismaClient.video.findFirst({
-    where: { id, collection: { userId: user.id } },
-  });
-
-  if (!existing) {
-    return NextResponse.json({ error: "Video not found" }, { status: 404 });
-  }
-
-  // Delete from Mux if asset exists
-  if (existing.muxAssetId) {
-    try {
-      await mux.video.assets.delete(existing.muxAssetId);
-    } catch {
-      // Asset may already be deleted on Mux side
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+
+    const { prisma } = await import("@/lib/prisma");
+
+    const existing = await prisma.video.findFirst({
+      where: { id, collection: { userId: user.id } },
+    });
+
+    if (!existing) {
+      return NextResponse.json({ error: "Video not found" }, { status: 404 });
+    }
+
+    // Delete from Mux if asset exists
+    if (existing.muxAssetId) {
+      try {
+        await mux.video.assets.delete(existing.muxAssetId);
+      } catch {
+        // Asset may already be deleted on Mux side
+      }
+    }
+
+    await prisma.video.delete({ where: { id } });
+
+    return NextResponse.json({ success: true });
+  } catch (e) {
+    console.error("Failed to delete video:", e);
+    return NextResponse.json(
+      { error: "Failed to delete video" },
+      { status: 500 }
+    );
   }
-
-  await prismaClient.video.delete({ where: { id } });
-
-  return NextResponse.json({ success: true });
 }

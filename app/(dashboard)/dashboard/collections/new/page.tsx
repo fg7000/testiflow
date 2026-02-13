@@ -60,8 +60,14 @@ export default function NewCollectionPage() {
       });
 
       if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || "Failed to create collection");
+        let errorMsg = "Failed to create collection";
+        try {
+          const data = await res.json();
+          errorMsg = data.error || errorMsg;
+        } catch {
+          // Response may not be JSON
+        }
+        throw new Error(errorMsg);
       }
 
       const collection = await res.json();
